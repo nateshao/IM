@@ -110,12 +110,6 @@ func (s *KafkaStore) CreateTopic(topic string, partitions int, replicationFactor
 	}
 	defer conn.Close()
 
-	controller, err := conn.Controller()
-	if err != nil {
-		return fmt.Errorf("failed to get controller: %w", err)
-	}
-	defer controller.Close()
-
 	topicConfigs := []kafka.TopicConfig{
 		{
 			Topic:             topic,
@@ -124,7 +118,7 @@ func (s *KafkaStore) CreateTopic(topic string, partitions int, replicationFactor
 		},
 	}
 
-	err = controller.CreateTopics(topicConfigs...)
+	err = conn.CreateTopics(topicConfigs...)
 	if err != nil {
 		return fmt.Errorf("failed to create topic: %w", err)
 	}
@@ -155,26 +149,9 @@ func (s *KafkaStore) GetTopicInfo(topic string) (*kafka.Topic, error) {
 	}, nil
 }
 
-// GetConsumerGroups 获取消费者组信息
-func (s *KafkaStore) GetConsumerGroups() ([]kafka.GroupDescription, error) {
-	conn, err := kafka.Dial("tcp", s.config.Brokers[0])
-	if err != nil {
-		return nil, fmt.Errorf("failed to connect to kafka: %w", err)
-	}
-	defer conn.Close()
-
-	controller, err := conn.Controller()
-	if err != nil {
-		return nil, fmt.Errorf("failed to get controller: %w", err)
-	}
-	defer controller.Close()
-
-	groups, err := controller.DescribeGroups([]string{s.config.GroupID})
-	if err != nil {
-		return nil, fmt.Errorf("failed to describe groups: %w", err)
-	}
-
-	return groups, nil
+// GetConsumerGroups 获取消费者组信息（segmentio/kafka-go不支持，返回未实现）
+func (s *KafkaStore) GetConsumerGroups() (interface{}, error) {
+	return nil, fmt.Errorf("GetConsumerGroups not implemented for segmentio/kafka-go")
 }
 
 // Close 关闭Kafka连接
