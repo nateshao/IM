@@ -11,26 +11,39 @@ import (
 	"github.com/user/im/pkg/websocket"
 )
 
-// MessageService 消息服务
-type MessageService struct {
-	mysqlStore *store.MySQLStore
-	redisStore *store.RedisStore
-	kafkaStore *store.KafkaStore
-	wsManager  *websocket.Manager
+// MessageStoreBackend 消息存储后端接口
+type MessageStoreBackend interface {
+	SaveMessage(*model.Message) error
+	GetMessage(string) (*model.Message, error)
+	GetOfflineMessages(userID string, lastMessageID string, limit int) ([]*model.Message, error)
 }
 
-// NewMessageService 创建消息服务
-func NewMessageService(
-	mysqlStore *store.MySQLStore,
+// MessageService 消息服务
+type MessageService struct {
+	storeBackend MessageStoreBackend
+	mysqlStore   *store.MySQLStore
+	redisStore   *store.RedisStore
+	kafkaStore   *store.KafkaStore
+	wsManager    *websocket.Manager
+}
+
+// NewMessageServiceWithBackend 支持LevelDB/MySQL后端
+func NewMessageServiceWithBackend(
+	storeBackend MessageStoreBackend,
 	redisStore *store.RedisStore,
 	kafkaStore *store.KafkaStore,
 	wsManager *websocket.Manager,
 ) *MessageService {
+	var mysqlStore *store.MySQLStore
+	if ms, ok := storeBackend.(*store.MySQLStore); ok {
+		mysqlStore = ms
+	}
 	return &MessageService{
-		mysqlStore: mysqlStore,
-		redisStore: redisStore,
-		kafkaStore: kafkaStore,
-		wsManager:  wsManager,
+		storeBackend: storeBackend,
+		mysqlStore:   mysqlStore,
+		redisStore:   redisStore,
+		kafkaStore:   kafkaStore,
+		wsManager:    wsManager,
 	}
 }
 
@@ -54,7 +67,7 @@ func (s *MessageService) SendPrivateMessage(senderID, receiverID string, msgType
 	}
 
 	// 保存到数据库
-	if err := s.mysqlStore.SaveMessage(message); err != nil {
+	if err := s.storeBackend.SaveMessage(message); err != nil {
 		return nil, fmt.Errorf("failed to save message: %w", err)
 	}
 
@@ -119,7 +132,7 @@ func (s *MessageService) SendGroupMessage(senderID, groupID string, msgType mode
 	}
 
 	// 保存到数据库
-	if err := s.mysqlStore.SaveMessage(message); err != nil {
+	if err := s.storeBackend.SaveMessage(message); err != nil {
 		return nil, fmt.Errorf("failed to save message: %w", err)
 	}
 
@@ -194,7 +207,7 @@ func (s *MessageService) GetMessage(messageID string) (*model.Message, error) {
 	}
 
 	// 缓存未命中，从数据库获取
-	message, err := s.mysqlStore.GetMessage(messageID)
+	message, err := s.storeBackend.GetMessage(messageID)
 	if err != nil {
 		return nil, err
 	}

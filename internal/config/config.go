@@ -7,6 +7,12 @@ import (
 	"github.com/spf13/viper"
 )
 
+// StoreConfig 存储配置
+type StoreConfig struct {
+	Type        string `mapstructure:"type"`
+	LevelDBPath string `mapstructure:"leveldb_path"`
+}
+
 // Config 应用配置
 type Config struct {
 	Server   ServerConfig   `mapstructure:"server"`
@@ -15,6 +21,7 @@ type Config struct {
 	Kafka    KafkaConfig    `mapstructure:"kafka"`
 	Log      LogConfig      `mapstructure:"log"`
 	Monitor  MonitorConfig  `mapstructure:"monitor"`
+	Store    StoreConfig    `mapstructure:"store"`
 }
 
 // ServerConfig 服务器配置

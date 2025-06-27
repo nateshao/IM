@@ -46,4 +46,8 @@ log:
 monitor:
   enabled: true
   port: 9090
-  path: "/metrics" 
+  path: "/metrics"
+
+store:
+  type: "mysql"           # 可选: mysql 或 leveldb
+  leveldb_path: "./data/leveldb" # LevelDB数据目录 

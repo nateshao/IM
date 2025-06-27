@@ -42,11 +42,33 @@ func main() {
 	snowflake.Init(1)
 
 	// 初始化存储层
-	mysqlStore, err := store.NewMySQLStore(&cfg.Database)
-	if err != nil {
-		logger.Fatal("Failed to initialize MySQL store", logger.ErrorField(err))
+	var (
+		mysqlStore   *store.MySQLStore
+		leveldbStore *store.LevelDBStore
+		storeBackend interface {
+			SaveMessage(*model.Message) error
+			GetMessage(string) (*model.Message, error)
+			GetOfflineMessages(string, string, int) ([]*model.Message, error)
+		}
+	)
+
+	if cfg.Store.Type == "leveldb" {
+		leveldbStore, err = store.NewLevelDBStore(cfg.Store.LevelDBPath)
+		if err != nil {
+			logger.Fatal("Failed to initialize LevelDB store", logger.ErrorField(err))
+		}
+		defer leveldbStore.Close()
+		storeBackend = leveldbStore
+		logger.Info("Using LevelDB as message store", logger.String("path", cfg.Store.LevelDBPath))
+	} else {
+		mysqlStore, err = store.NewMySQLStore(&cfg.Database)
+		if err != nil {
+			logger.Fatal("Failed to initialize MySQL store", logger.ErrorField(err))
+		}
+		defer mysqlStore.Close()
+		storeBackend = mysqlStore
+		logger.Info("Using MySQL as message store")
 	}
-	defer mysqlStore.Close()
 
 	redisStore, err := store.NewRedisStore(&cfg.Redis)
 	if err != nil {
@@ -64,7 +86,7 @@ func main() {
 	wsManager := websocket.NewManager()
 
 	// 初始化消息服务
-	messageService := service.NewMessageService(mysqlStore, redisStore, kafkaStore, wsManager)
+	messageService := service.NewMessageServiceWithBackend(storeBackend, redisStore, kafkaStore, wsManager)
 
 	// 启动Kafka消费者
 	go startKafkaConsumers(kafkaStore, messageService, wsManager)
