@@ -9,7 +9,7 @@ server:
 
 database:
   driver: "mysql"
-  host: "localhost"
+  host: "mysql"
   port: 3306
   username: "im_user"
   password: "im_password"
