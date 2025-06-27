@@ -36,7 +36,7 @@ WORKDIR /app
 COPY --from=builder /app/im-server .
 
 # 复制配置文件
-COPY --from=builder /app/config.yaml .
+# COPY --from=builder /app/config.yaml .
 
 # 更改文件所有者
 RUN chown -R im:im /app

@@ -19,7 +19,7 @@ database:
   max_open: 100
 
 redis:
-  host: "localhost"
+  host: "redis"
   port: 6379
   password: ""
   database: 0
@@ -27,7 +27,7 @@ redis:
 
 kafka:
   brokers:
-    - "localhost:9092"
+    - "kafka:9092"
   group_id: "im_group"
   topics:
     message_queue: "im_messages"
