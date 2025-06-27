@@ -147,6 +147,27 @@ go run cmd/client/main.go
 - ELK日志分析
 - 实时告警系统
 
+## 🗄️ 存储后端切换
+
+系统支持两种消息存储后端：
+
+- **MySQL**（默认）：适合持久化和历史查询。
+- **LevelDB**：本地高性能KV存储，适合极致性能场景。
+
+切换方法：
+
+1. 编辑 `config.yaml`：
+
+```yaml
+store:
+  type: "leveldb"           # 可选: mysql 或 leveldb
+  leveldb_path: "./data/leveldb" # LevelDB数据目录
+```
+
+2. 重启服务即可自动切换。
+
+> LevelDB 模式下所有消息数据存储在本地目录，适合单机高性能场景。
+
 ## �� 许可证
 
 MIT License 

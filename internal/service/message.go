@@ -177,13 +177,20 @@ func (s *MessageService) SyncOfflineMessages(userID, lastMessageID string, limit
 		return nil, fmt.Errorf("failed to get offline messages from redis: %w", err)
 	}
 
-	// 如果Redis中没有足够的消息，从数据库获取
+	// 如果Redis中没有足够的消息，从后端获取
 	if len(messages) < limit {
-		dbMessages, err := s.mysqlStore.GetOfflineMessages(userID, lastMessageID, limit-len(messages))
+		backendMessages, err := s.storeBackend.GetOfflineMessages(userID, lastMessageID, limit-len(messages))
 		if err != nil {
-			return nil, fmt.Errorf("failed to get offline messages from database: %w", err)
+			return nil, fmt.Errorf("failed to get offline messages from backend: %w", err)
 		}
-		messages = append(messages, dbMessages...)
+		messages = append(messages, backendMessages...)
+
+		// 如果是LevelDB，拉取后自动删除这些离线消息
+		if ldb, ok := s.storeBackend.(*store.LevelDBStore); ok {
+			for _, msg := range backendMessages {
+				_ = ldb.RemoveOfflineMessage(userID, msg.ID)
+			}
+		}
 	}
 
 	return messages, nil
