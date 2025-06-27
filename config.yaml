@@ -1,0 +1,49 @@
+server:
+  host: "0.0.0.0"
+  port: 8080
+  read_timeout: 30s
+  write_timeout: 30s
+  max_connections: 100000
+  heartbeat_interval: 30s
+  max_message_size: 1048576  # 1MB
+
+database:
+  driver: "mysql"
+  host: "localhost"
+  port: 3306
+  username: "im_user"
+  password: "im_password"
+  database: "im_db"
+  charset: "utf8mb4"
+  max_idle: 10
+  max_open: 100
+
+redis:
+  host: "localhost"
+  port: 6379
+  password: ""
+  database: 0
+  pool_size: 20
+
+kafka:
+  brokers:
+    - "localhost:9092"
+  group_id: "im_group"
+  topics:
+    message_queue: "im_messages"
+    group_chat: "im_group_chat"
+    offline_msg: "im_offline_messages"
+
+log:
+  level: "info"
+  format: "json"
+  output: "stdout"
+  max_size: 100
+  max_backups: 3
+  max_age: 28
+  compress: true
+
+monitor:
+  enabled: true
+  port: 9090
+  path: "/metrics" 
